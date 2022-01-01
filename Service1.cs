@@ -1,25 +1,16 @@
-﻿using DataPostWS.DB;
-using DataPostWS.Util;
-using iPushData;
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Configuration;
-using System.Data;
-using System.Diagnostics;
-using System.Linq;
-using System.Runtime.Remoting;
-using System.Runtime.Remoting.Channels;
-using System.Runtime.Remoting.Channels.Tcp;
-using System.ServiceProcess;
-using System.Text;
-using System.Threading.Tasks;
-using Ivorybet;
-using System.Collections.Concurrent;
-using System.Linq;
-namespace DataPostWS
+﻿namespace DataPostWS
 {
+    using System;
+    using System.Collections.Concurrent;
+    using System.Collections.Generic;
+    using System.Data;
+    using System.Linq;
+    using System.ServiceProcess;
+    using DataPostWS.DB;
+    using DataPostWS.Util;
+    using iPushData;
+    using Ivorybet;
+
     public partial class Service1 : ServiceBase
     {
         // NLog.Logger logger = NLog.LogManager.GetLogger("DataPostingWS_test");
@@ -39,8 +30,8 @@ namespace DataPostWS
                 PushDataList.Add("Opal88", IvorybetAPI);//Opal88 follow IvoryBet fun
                 IvorybetAPI = new IvorybetFun();
                 PushDataList.Add("Nova88", IvorybetAPI);//Nova88 follow IvoryBet fun
-                RngSummaryFun RngSummaryFunAPI = new RngSummaryFun();
-                PushDataList.Add("Nova88_RNG", RngSummaryFunAPI);//RNG delay push fun
+                ////RngSummaryFun RngSummaryFunAPI = new RngSummaryFun();
+                ////PushDataList.Add("Nova88_RNG", RngSummaryFunAPI);//RNG delay push fun
                 Start();
             }
             catch (Exception ex)
@@ -82,24 +73,24 @@ namespace DataPostWS
             }
         }
 
-        public void PostGetBetDetail(object oStieName)//object obj string stieName
+        public void PostGetBetDetail(object oSiteName)//object obj string stieName
         {
             NLog.Logger logger = NLog.LogManager.GetLogger("PostGetBetDetail");
-            string stieName = (string)oStieName;
-            if (PushDataList.ContainsKey(stieName))
+            string siteName = (string)oSiteName;
+            if (PushDataList.ContainsKey(siteName))
             {
                 bool is_test = Common.isTest; // check config
                 int iCount = 0;
                 int iVK = 3;
-                string sConnect = stieName;
+                string sConnect = siteName;
                 bool bRNG = false;
 
-                if (stieName.EndsWith("_RNG"))
+                if (siteName.EndsWith("_RNG"))
                 {
                     iVK = 4;
-                    sConnect = stieName.Remove(stieName.LastIndexOf("_"), 4);
+                    sConnect = siteName.Remove(siteName.LastIndexOf("_"), 4);
                     bRNG = true;
-                    logger.Debug(stieName + ", RNG, iVK:" + iVK);
+                    logger.Debug(siteName + ", RNG, iVK:" + iVK);
                 }
 
                 bool bDelayServiceWorking = false;
@@ -112,14 +103,14 @@ namespace DataPostWS
                     LicRepDB rep_db = new LicRepDB(sConnect);// new DB connencting 
             
                     long LastVersionKey;
-                    if (currenctVKey[stieName] == 0)
+                    if (currenctVKey[siteName] == 0)
                     {
                         LastVersionKey = rep_db.Dot_Dep_GetLastVersionKey(is_test, iVK);//Common.isTest initial
-                        loggerVK.Debug("sConnect=" + sConnect +", stieName=" + stieName + ", LastVersionKey=" + LastVersionKey + ", Dot_Dep_GetLastVersionKey:" + iVK);
+                        loggerVK.Debug("sConnect=" + sConnect +", stieName=" + siteName + ", LastVersionKey=" + LastVersionKey + ", Dot_Dep_GetLastVersionKey:" + iVK);
                     }
                     else
                     {
-                        LastVersionKey = currenctVKey[stieName];
+                        LastVersionKey = currenctVKey[siteName];
                         //loggerVK.Debug("sConnect=" + sConnect + ", stieName=" + stieName + ", currenctVKey[stieName]=" + currenctVKey[stieName] + ", Dot_Dep_GetLastVersionKey:" + iVK);
                     }
 
@@ -129,12 +120,12 @@ namespace DataPostWS
                     ticket_max_version_key = aryBetInfo.Length == 0 ? 0 : aryBetInfo.Max(v => v.version_key);
                     if (max_version_key < LastVersionKey)
                     {
-                        loggerVK.Error("stieName=" + stieName + ", max_version_key=" + max_version_key + ", ticket_max_version_key=" + ticket_max_version_key + ", LastVersionKey=" + LastVersionKey);
+                        loggerVK.Error("stieName=" + siteName + ", max_version_key=" + max_version_key + ", ticket_max_version_key=" + ticket_max_version_key + ", LastVersionKey=" + LastVersionKey);
                     }
                     if (ticket_max_version_key == 0)
                     {
                         LastVersionKey = max_version_key;
-                        currenctVKey[stieName] = max_version_key;
+                        currenctVKey[siteName] = max_version_key;
                     }
                     else
                     {
@@ -147,7 +138,7 @@ namespace DataPostWS
                                        where item.winlost_datetime < today
                                        select item;
                         aryBetInfo = vBetInfo.ToArray();
-                        logger.Debug(stieName + ", winlost_datetime < today today:" + today + ", LastVersionKey:" + LastVersionKey);
+                        logger.Debug(siteName + ", winlost_datetime < today today:" + today + ", LastVersionKey:" + LastVersionKey);
                     }
 
                     if (aryBetInfo != null)
@@ -155,8 +146,8 @@ namespace DataPostWS
 
                     if (iCount > 0)//iCount >= 499
                     {
-                        aParanPushData _result = PushDataList[stieName].PushData(stieName, aryBetInfo);// get Site specific API
-                        currenctVKey[stieName] = _result.version_key; //= _result.version_key;
+                        aParanPushData _result = PushDataList[siteName].PushData(siteName, aryBetInfo);// get Site specific API
+                        currenctVKey[siteName] = _result.version_key; //= _result.version_key;
                      //   loggerVK.Debug("stieName=" + stieName + ",  _result.version_key, currenctVKey[stieName]=" + currenctVKey[stieName] );
                         if (_result.update_check)
                         {
@@ -192,7 +183,7 @@ namespace DataPostWS
                         _result.update_check = false;
                          */
 
-                        TaskList[stieName].Change(3600000, System.Threading.Timeout.Infinite);
+                        TaskList[siteName].Change(3600000, System.Threading.Timeout.Infinite);
                     }
                     else
                     {
@@ -200,7 +191,7 @@ namespace DataPostWS
                         {
                             if (iCount >= 499)// if count >= 499, it's main there has left data.
                             {
-                                TaskList[stieName].Change(1, System.Threading.Timeout.Infinite);
+                                TaskList[siteName].Change(1, System.Threading.Timeout.Infinite);
                             }
                             else// otherwise, waiting to over count its more than 499 in 10 sec.
                             {
@@ -208,18 +199,18 @@ namespace DataPostWS
                                 {
                                     if (iCount == 0)
                                     {
-                                        logger.Debug("bRNG, 3600000" + stieName);
-                                        TaskList[stieName].Change(3600000, System.Threading.Timeout.Infinite);//1 hour
+                                        logger.Debug("bRNG, 3600000" + siteName);
+                                        TaskList[siteName].Change(3600000, System.Threading.Timeout.Infinite);//1 hour
                                     }
                                     else {
-                                        logger.Debug("bRNG, 5000" + stieName);
-                                        TaskList[stieName].Change(5000, System.Threading.Timeout.Infinite);
+                                        logger.Debug("bRNG, 5000" + siteName);
+                                        TaskList[siteName].Change(5000, System.Threading.Timeout.Infinite);
                                     }
 
                                 }
                                 else
                                 {
-                                    TaskList[stieName].Change(10000, System.Threading.Timeout.Infinite);
+                                    TaskList[siteName].Change(10000, System.Threading.Timeout.Infinite);
                                 }
                             }
                         }

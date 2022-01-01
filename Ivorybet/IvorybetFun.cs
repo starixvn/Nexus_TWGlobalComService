@@ -1,24 +1,20 @@
-﻿using iPushData;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Web;
-using System.ComponentModel;
-using System.Data;
-using System.IO;
-using System.Net;
-using System.Reflection;
-using System.Threading.Tasks;
-using Dapper;
-using System.Data.SqlClient;
-using System.Configuration;
-using System.Security.Cryptography.X509Certificates;
-using System.Net.Security;
-using System.Xml;
-using System.Globalization;
-namespace Ivorybet
+﻿namespace Ivorybet
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Configuration;
+    using System.Data;
+    using System.Data.SqlClient;
+    using System.IO;
+    using System.Linq;
+    using System.Net;
+    using System.Net.Security;
+    using System.Security.Cryptography.X509Certificates;
+    using System.Text;
+    using System.Web;
+    using Dapper;
+    using iPushData;
+
     public class IvorybetFun : IPushData
     {
         private List<GameTransaction> _tempObject = new List<GameTransaction>();
@@ -27,21 +23,21 @@ namespace Ivorybet
         private tokenObject AccessTokenObj;
         private string siteNamelog = "";
 
-        public aParanPushData PushData(string stieName, IEnumerable<Bet> aryBet)
+        public aParanPushData PushData(string siteName, IEnumerable<Bet> aryBet)
         {
-            siteNamelog = stieName;
+            siteNamelog = siteName;
             aParanPushData _result = new aParanPushData();
-            NLog.Logger logger = NLog.LogManager.GetLogger(stieName + "_log");
+            NLog.Logger logger = NLog.LogManager.GetLogger(siteName + "_log");
             //NLog.Logger loggerVK = NLog.LogManager.GetLogger("VK");
-            NLog.Logger batchidlogger = NLog.LogManager.GetLogger(stieName + "_batch_transaction_id_log");
-            string ClientId = ConfigurationManager.AppSettings[stieName + "_client_id"];
-            string ClientSecret = ConfigurationManager.AppSettings[stieName + "_client_secret"];
+            NLog.Logger batchidlogger = NLog.LogManager.GetLogger(siteName + "_batch_transaction_id_log");
+            string ClientId = ConfigurationManager.AppSettings[siteName + "_client_id"];
+            string ClientSecret = ConfigurationManager.AppSettings[siteName + "_client_secret"];
             // make data first, than get effective  token
             #region makeData
             apiParan _aParan = new apiParan();
             _aParan.aggregator_code = "";
-            _aParan.operator_code = ConfigurationManager.AppSettings[stieName + "_operator_code"];// "OP00031";
-            _aParan.provider_code = ConfigurationManager.AppSettings[stieName + "_provider_code"];// "PR00050";
+            _aParan.operator_code = ConfigurationManager.AppSettings[siteName + "_operator_code"];// "OP00031";
+            _aParan.provider_code = ConfigurationManager.AppSettings[siteName + "_provider_code"];// "PR00050";
             _aParan.game_transactions = new System.Collections.Generic.List<GameTransaction>();
 
             long Tmp_version_key = 0;
@@ -68,17 +64,17 @@ namespace Ivorybet
                     bet.winlost_datetime = bet.transaction_time.AddMinutes(1);
                 }
                 _object.settlement_date = bet.winlost_datetime.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss.fff");//.ToUniversalTime()??
-                if (stieName == "Ivorybet")// mapping from Servoce1 in DataPostWS
+                if (siteName == "Ivorybet")// mapping from Servoce1 in DataPostWS
                 {
                     _object.brand = "ivorysport";//stieName
                     _object.brand_url = "http://www.ivorysport.com/";//bet.transdesc;
                 }
-                else if (stieName == "Opal88")
+                else if (siteName == "Opal88")
                 {
                     _object.brand = "Opal88";//stieName
                     _object.brand_url = "www.opal88.com";//bet.transdesc;
                 }
-                else if (stieName == "Nova88")
+                else if (siteName == "Nova88")
                 {
                     _object.brand = "Nova88";//stieName
                     _object.brand_url = "www.Nova88.com";//bet.transdesc;
@@ -100,15 +96,15 @@ namespace Ivorybet
                 #region rules
 
                 //Nova88
-                if (stieName == "Nova88" && !new string[] { "CNY", "THB", "MYR", "IDR" }.Contains(_object.currency_code)) //RMB==CNY
+                if (siteName == "Nova88" && !new string[] { "CNY", "THB", "MYR", "IDR" }.Contains(_object.currency_code)) //RMB==CNY
                 {
                     continue;
                 }
-                if (stieName == "Ivorybet" && !new string[] { "CNY", "THB", "MYR", "VND", "IDR" }.Contains(_object.currency_code)) //RMB==CNY
+                if (siteName == "Ivorybet" && !new string[] { "CNY", "THB", "MYR", "VND", "IDR" }.Contains(_object.currency_code)) //RMB==CNY
                 {
                     continue;
                 }
-                if (stieName == "Opal88" && !new string[] { "CNY", "MYR", "THB", "IDR" }.Contains(_object.currency_code)) //RMB==CNY  
+                if (siteName == "Opal88" && !new string[] { "CNY", "MYR", "THB", "IDR" }.Contains(_object.currency_code)) //RMB==CNY  
                 {
                     continue;
                 }
@@ -122,13 +118,18 @@ namespace Ivorybet
                 }
 
                 //remove SportType; Number Game:161, VS:180~186, VS2:190~197,199
-                if (stieName == "Opal88" && new int[] { 161, 180, 181, 182, 183, 184, 185, 186, 190, 191, 192, 193, 194, 195, 196, 199 }.Contains(bet.SportType))
+                if (siteName == "Opal88" && new int[] { 161, 180, 181, 182, 183, 184, 185, 186, 190, 191, 192, 193, 194, 195, 196, 199 }.Contains(bet.SportType))
                 {
                     continue;
                 }
 
                 //remove SportType; VS:180~186, VS2:190~197,199
-                if (stieName == "Ivorybet" && new int[] { 180, 181, 182, 183, 184, 185, 186, 190, 191, 192, 193, 194, 195, 196, 199 }.Contains(bet.SportType))
+                if (siteName == "Ivorybet" && new int[] { 180, 181, 182, 183, 184, 185, 186, 190, 191, 192, 193, 194, 195, 196, 199 }.Contains(bet.SportType))
+                {
+                    continue;
+                }
+
+                if (siteName == "Nova88" && !new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 15, 16, 18, 22, 24, 25, 26, 28, 29, 31, 32, 33, 37, 43, 44, 48, 49, 50, 53, 99 }.Contains(bet.SportType))
                 {
                     continue;
                 }
@@ -217,7 +218,7 @@ namespace Ivorybet
                     if (resultData.status.ToLower() == "unable_to_process_request")
                     {
                      //   loggerVK.Info("2." + siteNamelog + "," + Tmp_version_key);
-                        SendMail(stieName, "Get Error Message From ComRCI - " + stieName, json, sData, url, "MailReciver");
+                        SendMail(siteName, "Get Error Message From ComRCI - " + siteName, json, sData, url, "MailReciver");
                         logger.Warn("service top, current version_key: " + Tmp_version_key);
                         _result.update_check = false;
                         _result.version_key = Tmp_version_key;
